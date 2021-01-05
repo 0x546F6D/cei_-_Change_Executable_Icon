@@ -26,7 +26,7 @@ void GetCommandLineArgvA(char* pCommandLine, char** aArgs);															// Get
 void WriteToConsoleA(char* lpMsg);																					// "Write to Console A" function to save >20KB compared to printf and <stdio.h>
 
 // -------------------- C Function Prototypes --------------------
-int _access(const char* path, int mode);																			// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/access-waccess?view=msvc-160
+int access(const char* path, int mode);																				// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/access-waccess?view=msvc-160
 // void* __stdcall GetStdHandle(int32_t nStdHandle);																// https://docs.microsoft.com/en-us/windows/console/getstdhandle
 // void* GetCommandLineA();																							// https://docs.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getcommandlinea
 // size_t strlen(const char *str);																					// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strlen-wcslen-mbslen-mbslen-l-mbstrlen-mbstrlen-l?view=msvc-160
@@ -49,6 +49,7 @@ int _access(const char* path, int mode);																			// https://docs.micro
 // -------------------- Global Variables --------------------
 void* __stdcall hdConsoleOut;
 
+// -------------------- entry point function --------------------
 void cei() {
 	hdConsoleOut = GetStdHandle(-11);
 // Get arguments from command line
@@ -59,11 +60,11 @@ void cei() {
 // Check that enough arguments were passed
 	if(!aArgs[2]) {
 		WriteToConsoleA("\nERROR_BAD_ARGUMENTS: Arguments missing\n");
-		WriteToConsoleA("\nUsage: > cei PATH\\TO\\ICO PATH\\TO\\EXE [PATH\\TO\\EXEWITHICO]\n");
+		WriteToConsoleA("\nUsage: > cei PATH\\TO\\ICO PATH\\TO\\EXE [PATH\\TO\\NEWEXEWITHICO]\n");
 		ExitProcess(0xA0); } // ERROR_BAD_ARGUMENTS
 // Check if 1st and 2nd arguments are a path to a file that exists
 	for (int ct=1; ct<=2; ct++) {
-		if(_access(aArgs[ct], 0) < 0 ) {
+		if(access(aArgs[ct], 0) < 0 ) {
 			WriteToConsoleA("\nERROR_FILE_NOT_FOUND: \""); WriteToConsoleA(aArgs[ct]); WriteToConsoleA("\"\n");
 			ExitProcess(0x2); } } // ERROR_FILE_NOT_FOUND
 // Check if a 3rd argument has been passed to backup the original exe
