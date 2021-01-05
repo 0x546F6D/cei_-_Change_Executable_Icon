@@ -1,6 +1,6 @@
 // # cei - Change Executable Icon
 
-// Change Executable Icon for command line, in C:
+// Change Executable Icon for command line:
 //   - Based on https://github.com/fatrolls/IconChanger
 //   - Only the 1st image of the .ico file is added to the .exe
 //   - Tested on Windows 10 Pro, build 19041.685, locale en-US
