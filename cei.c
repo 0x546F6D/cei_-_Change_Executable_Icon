@@ -61,12 +61,12 @@ void cei() {
 	if(!cpaArgs[2]) {
 		WriteToConsoleA("\nERROR_BAD_ARGUMENTS: Arguments missing\n");
 		WriteToConsoleA("\nUsage: > cei PATH\\TO\\ICO PATH\\TO\\EXE [PATH\\TO\\NEWEXEWITHICO]\n");
-		ExitProcess(0xA0); } // ERROR_BAD_ARGUMENTS
+		ExitProcess(0xA0); }													// 0xA0 = ERROR_BAD_ARGUMENTS	
 // Check if 1st and 2nd arguments are a path to a file that exists
 	for (int ct=1; ct<=2; ct++) {
 		if(access(cpaArgs[ct], 0) < 0 ) {
 			WriteToConsoleA("\nERROR_FILE_NOT_FOUND: \""); WriteToConsoleA(cpaArgs[ct]); WriteToConsoleA("\"\n");
-			ExitProcess(0x2); } } // ERROR_FILE_NOT_FOUND
+		ExitProcess(0x2); } }													// 0x2 = ERROR_FILE_NOT_FOUND
 // Check if a 3rd argument has been passed to backup the original exe
 	if(cpaArgs[3]) {
 		CopyFileA(cpaArgs[2], cpaArgs[3], 0);
@@ -94,7 +94,7 @@ void cei() {
 	if (*(int16_t*)vpmIcoInfo != 0 || *(int16_t*)(vpmIcoInfo + 2) != 1 ){		// ICONDIR->Reserved = 0 && ICONDIR->Type = 1
 		WriteToConsoleA("\nERROR_BAD_ARGUMENTS: \""); WriteToConsoleA(cpaArgs[1]); WriteToConsoleA("\" is not a valid .ico file\n");
 		CloseHandle(vpIcoFile);
-		ExitProcess(0xA0); } // ERROR_BAD_ARGUMENTS
+		ExitProcess(0xA0); }													// 0xA0 = ERROR_BAD_ARGUMENTS	
 // Get .ico 1st image + info
 	int32_t	i32ImgOffset = *(int32_t*)(vpmIcoInfo + 18);						// Get 1st image offset: ICONDIRENTRY[1]->i32ImgOffset
 	SetFilePointer(vpIcoFile, i32ImgOffset, NULL, 0);
