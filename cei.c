@@ -19,13 +19,13 @@
 
 #include <windows.h>
 #include <stdint.h>
-#include <stdio.h>
+// #include <stdio.h>
 																				//
-// -------------------- Project Function Prototypes --------------------
+// -------------------- Project Functions Prototype --------------------
 void CommandLineToArgvA(char* cpCmdLine, char** cpaArgs);						// Get arguments from command line.. just a personal preference for char* instead of the wchar_t*/LPWSTR type provided by "CommandLineToArgvW()"
 void WriteToConsoleA(char* cpMsg);												// "Write to Console A" function to save >20KB compared to printf and <stdio.h>
 
-// -------------------- C Function Prototypes --------------------
+// -------------------- Functions Prototype --------------------
 int access(const char* path, int mode);											// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/access-waccess?view=msvc-160
 // void* __stdcall GetStdHandle(int32_t nStdHandle);							// https://docs.microsoft.com/en-us/windows/console/getstdhandle
 // void* GetCommandLineA();														// https://docs.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getcommandlinea
@@ -40,11 +40,11 @@ int access(const char* path, int mode);											// https://docs.microsoft.com/
 // void* BeginUpdateResourceA(const char* pFileName, int bDeleteExistingResources);  // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-beginupdateresourcea
 // int UpdateResourceA(void* hUpdate, const char* lpType, const char* lpName,int16_t wLanguage, void* lpData, int32_t cb);  // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea
 // int EndUpdateResourceA(void* hUpdate, int fDiscard);							// https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-endupdateresourcea
-// void ExitProcess(uint32_t uExitCode);										// https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitprocess
+// void ExitProcess(unsigned int uExitCode);									// https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitprocess
 
 // -------------------- C Macro --------------------
 // #define MAKEINTRESOURCEA(r)	((unsigned long)(unsigned short) r)				// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-makeintresourcea
-// #define MAKELANGID(p,s) ((((WORD)(s)) << 10) | (WORD)(p))					// https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-makelangid
+// #define MAKELANGID(p,s) ((((unsigned long)(s)) << 10) | (unsigned long)(p))	// https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-makelangid
 
 // -------------------- Global Variables --------------------
 void* __stdcall vp_ConsOut;
@@ -53,9 +53,9 @@ void* __stdcall vp_ConsOut;
 void cei() {
 	vp_ConsOut = GetStdHandle(-11);
 // Get arguments from command line
-	char*	cpCmdLine = GetCommandLineA();
 	const int iNbArgs = 3;														// number of expected arguments
-	char* cpaArgs[iNbArgs+1];													// 1st "argument" isnt really one: it's this program path
+	char*	cpaArgs[iNbArgs+1];													// 1st "argument" isnt really one: it's this program path
+	char*	cpCmdLine = GetCommandLineA();
 	CommandLineToArgvA(cpCmdLine, cpaArgs);										// Get arguments from command line
 // Check that enough arguments were passed
 	if(!cpaArgs[2]) {
@@ -75,7 +75,7 @@ void cei() {
 	void*	vpIcoFile	= CreateFileA(cpaArgs[1], 0x80000000, 0, NULL, 3, 0, NULL);
 	void*	vpIcoInfo	= malloc(22);
 	int64_t vpmIcoInfo	= (int64_t)vpIcoInfo;
-	unsigned long*	ulpBytRead = 0;
+	unsigned long* ulpBytRead = 0;
 	ReadFile(vpIcoFile, vpIcoInfo, 22, ulpBytRead, NULL);
 // printf("\n");
 // printf("i16Reserved:  %x\n",	*(int16_t*)(vpmIcoInfo));
@@ -96,16 +96,16 @@ void cei() {
 		CloseHandle(vpIcoFile);
 		ExitProcess(0xA0); } // ERROR_BAD_ARGUMENTS
 // Get .ico 1st image + info
-	*(int16_t*)(vpmIcoInfo + 4) = 1;											// Set ICONDIR->NbImg = 1: only 1st image is used
-	int32_t i32ImgBytSiz = *(int32_t*)(vpmIcoInfo + 14);						// Get 1st image size in byte: ICONDIRENTRY[1]->i32ImgBytSiz
-	int32_t i32ImgOffset = *(int32_t*)(vpmIcoInfo + 18);						// Get 1st image offset: ICONDIRENTRY[1]->i32ImgOffset
-	*(int16_t*)(vpmIcoInfo + 18) = 1;											// Replace ICONDIRENTRY[1]->i32ImgOffset with GRPICONDIRENTRY[1]->OrdinalName = 1
-	void*	vpRes = malloc(i32ImgBytSiz);
+	int32_t	i32ImgOffset = *(int32_t*)(vpmIcoInfo + 18);						// Get 1st image offset: ICONDIRENTRY[1]->i32ImgOffset
 	SetFilePointer(vpIcoFile, i32ImgOffset, NULL, 0);
+	int32_t	i32ImgBytSiz = *(int32_t*)(vpmIcoInfo + 14);						// Get 1st image size in byte: ICONDIRENTRY[1]->i32ImgBytSiz
+	void*	vpRes = malloc(i32ImgBytSiz);
 	ReadFile(vpIcoFile, vpRes, i32ImgBytSiz, ulpBytRead, NULL);
 	CloseHandle(vpIcoFile);
+	*(int16_t*)(vpmIcoInfo + 4) = 1;											// Set ICONDIR->NbImg = 1: only 1st image is used
+	*(int16_t*)(vpmIcoInfo + 18) = 1;											// Replace ICONDIRENTRY[1]->i32ImgOffset with GRPICONDIRENTRY[1]->OrdinalName = 1
 // Update .exe ressource
-	void* vpUpdRes = BeginUpdateResourceA(cpaArgs[2], 0);
+	void*	vpUpdRes = BeginUpdateResourceA(cpaArgs[2], 0);
 	UpdateResourceA(vpUpdRes, (char*)3, (char*)1, 0, vpRes, i32ImgBytSiz);		// (char*)3  = MAKEINTRESOURCE(3)  = RT_ICON, 0 = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL)
 	UpdateResourceA(vpUpdRes, (char*)14, (char*)1, 0, vpIcoInfo, 20);			// (char*)14 = MAKEINTRESOURCE(14) = RT_GROUP_ICON
 	EndUpdateResourceA(vpUpdRes, 0);
@@ -113,13 +113,14 @@ void cei() {
 	ExitProcess(0);
 }
 
-// -------------------- Get arguments from command line A -------------------- function.. just a personal preference for char* instead of the wchar_t* provided by "CommandLineToArgvW()"
+// -------------------- Get arguments from command line A -------------------- Just a personal preference for char* instead of the wchar_t* provided by "CommandLineToArgvW()"
 // Note: this function works with double quoted arguments containing escaped quotes: "Such as this \"Double Quoted\" Argument with \"Escaped Quotes\""
 void CommandLineToArgvA(char* cpCmdLine, char** cpaArgs) {
+	char	cEnd;
 	while (*cpCmdLine) {
 		while (*cpCmdLine && *cpCmdLine == ' ') cpCmdLine++;					// Trim white-spaces before the argument
-		char cEnd = ' ';														// end of argument is defined as white-space..
-		if (*cpCmdLine == '\"') { cpCmdLine++; cEnd = '\"'; }					// ..or as a double quote if argument is between double quotes
+		cEnd = ' ';																// end of argument is defined as white-space..
+		if (*cpCmdLine == '\"') { cEnd = '\"'; cpCmdLine++; }					// ..or as a double quote if argument is between double quotes
 		*cpaArgs = cpCmdLine;													// Save argument pointer
 		while (*cpCmdLine && (*cpCmdLine != cEnd || (cEnd == '\"' && *(cpCmdLine-1) == '\\'))) cpCmdLine++;
 		*cpCmdLine = 0;	cpCmdLine++;
