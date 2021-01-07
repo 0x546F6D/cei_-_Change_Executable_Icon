@@ -29,7 +29,7 @@ void WriteToConsoleA(char* cpMsg);												// "Write to Console A" function t
 int access(const char* path, int mode);											// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/access-waccess?view=msvc-160
 // void* __stdcall GetStdHandle(int32_t nStdHandle);							// https://docs.microsoft.com/en-us/windows/console/getstdhandle
 // void* GetCommandLineA();														// https://docs.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getcommandlinea
-// size_t strlen(const char *str);												// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strlen-wcslen-mbslen-mbslen-l-mbstrlen-mbstrlen-l?view=msvc-160
+// unsigned long strlen(const char *str);										// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strlen-wcslen-mbslen-mbslen-l-mbstrlen-mbstrlen-l?view=msvc-160
 // int __stdcall WriteConsoleA(void* hConsoleOutput, const char* lpBuffer,int32_t nNumberOfCharsToWrite, unsigned long* lpNumberOfCharsWritten,void* lpReserved);  // https://docs.microsoft.com/en-us/windows/console/writeconsole
 // int CopyFileA(const char* lpExistingFileName, const char* lpNewFileName, int bFailIfExists);  // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-copyfilea
 // void* malloc(size_t size);													// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/malloc?view=msvc-160
