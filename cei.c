@@ -20,12 +20,12 @@
 #include <windows.h>
 #include <stdint.h>
 // #include <stdio.h>
-																				//
-// -------------------- Project Functions Prototype --------------------
+
+// ----------------------- Project Functions Prototype ------------------------ //
 void CommandLineToArgvA(char* cpCmdLine, char** cpaArgs);						// Get arguments from command line.. just a personal preference for char* instead of the wchar_t*/LPWSTR type provided by "CommandLineToArgvW()"
 void WriteToConsoleA(char* cpMsg);												// "Write to Console A" function to save >20KB compared to printf and <stdio.h>
 
-// -------------------- Functions Prototype --------------------
+// --------------------------- Functions Prototype ---------------------------- //
 int access(const char* path, int mode);											// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/access-waccess?view=msvc-160
 // void* __stdcall GetStdHandle(int32_t nStdHandle);							// https://docs.microsoft.com/en-us/windows/console/getstdhandle
 // void* GetCommandLineA();														// https://docs.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getcommandlinea
@@ -42,14 +42,14 @@ int access(const char* path, int mode);											// https://docs.microsoft.com/
 // int EndUpdateResourceA(void* hUpdate, int fDiscard);							// https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-endupdateresourcea
 // void ExitProcess(unsigned int uExitCode);									// https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitprocess
 
-// -------------------- C Macro --------------------
+// ------------------------------ Windows Stuffs ------------------------------ //
 // #define MAKEINTRESOURCEA(r)	((unsigned long)(unsigned short) r)				// https://docs.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-makeintresourcea
 // #define MAKELANGID(p,s) ((((unsigned long)(s)) << 10) | (unsigned long)(p))	// https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-makelangid
 
-// -------------------- Global Variables --------------------
+// ----------------------------- Global Variables ----------------------------- //
 void* __stdcall vp_ConsOut;
 
-// -------------------- entry point function --------------------
+// --------------------------- entry point function --------------------------- //
 void cei() {
 	vp_ConsOut = GetStdHandle(-11);
 // Get arguments from command line
@@ -113,8 +113,10 @@ void cei() {
 	ExitProcess(0);
 }
 
-// -------------------- Get arguments from command line A -------------------- Just a personal preference for char* instead of the wchar_t* provided by "CommandLineToArgvW()"
-// Note: this function works with double quoted arguments containing escaped quotes: "Such as this \"Double Quoted\" Argument with \"Escaped Quotes\""
+// -------------------- Get arguments from command line A --------------------- //
+// Notes:
+//	- Personal preference for char* instead of the wchar_t* provided by "CommandLineToArgvW()"
+//	- Works with double quoted arguments containing escaped quotes: "Such as this \"Double Quoted\" Argument with \"Escaped Quotes\""
 void CommandLineToArgvA(char* cpCmdLine, char** cpaArgs) {
 	char	cEnd;
 	while (*cpCmdLine) {
@@ -122,12 +124,13 @@ void CommandLineToArgvA(char* cpCmdLine, char** cpaArgs) {
 		cEnd = ' ';																// end of argument is defined as white-space..
 		if (*cpCmdLine == '\"') { cEnd = '\"'; cpCmdLine++; }					// ..or as a double quote if argument is between double quotes
 		*cpaArgs = cpCmdLine;													// Save argument pointer
-		while (*cpCmdLine && (*cpCmdLine != cEnd || (cEnd == '\"' && *(cpCmdLine-1) == '\\'))) cpCmdLine++;
+		while (*cpCmdLine && (*cpCmdLine != cEnd || (cEnd == '\"' && *(cpCmdLine-1) == '\\'))) cpCmdLine++;  // Find end of argument ' ' or '\"', while skipping '\\\"' if cEnd = '\"'
 		*cpCmdLine = 0;	cpCmdLine++;
 		cpaArgs++; }
 }
 
-// -------------------- "Write to Console A" -------------------- function to save >20KB compared to printf and <stdio.h>
+// --------------------------- "Write to Console A" --------------------------- //
+// Note: Saves >20KB compared to printf and <stdio.h>
 void WriteToConsoleA(char* cpMsg) {
 	WriteConsoleA(vp_ConsOut, cpMsg, strlen(cpMsg), NULL, NULL);
 }
