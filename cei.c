@@ -9,28 +9,28 @@
 //	$ gcc -o cei cei.c -s -O3 -Wl,--gc-sections -fno-asynchronous-unwind-tables -nostartfiles --entry=cei
 
 // Usage:
-//	> cei PATH\TO\ICO PATH\TO\EXE [PATH\TO\NEWEXEWITHICO]
-//   - If [PATH\TO\NEWEXEWITHICO] is ommitted, cei.exe edits the original .exe located at PATH\TO\EXE
-//   - If [PATH\TO\NEWEXEWITHICO] is passed, cei.exe makes a copy of the original .exe to PATH\TO\EXEWITHICO, and edits this copy
+//	> cei Path\to\ICO Path\to\EXE [Path\to\newEXEwithICO]
+//   - If [Path\to\newEXEwithICO] is ommitted, cei.exe edits the original .exe located at Path\to\EXE
+//   - If [Path\to\newEXEwithICO] is passed, cei.exe makes a copy of the original .exe to Path\to\newEXEwithICO, and edits this copy
 
 // Notes:
 //   - !! Some executables wont work anymore after changing their icon.. !!
-//   - ..So make a backup beforehand and/or pass [PATH\TO\NEWEXEWITHICO] as a 3rd argument
+//   - ..So make a backup beforehand and/or pass [Path\to\newEXEwithICO] as a 3rd argument
 
 #include <windows.h>
 #include <stdint.h>
 // #include <stdio.h>
 
 // ----------------------- Project Functions Prototype ------------------------ //
-void CommandLineToArgvA(char* cpCmdLine, char** cpaArgs);						// Get arguments from command line.. just a personal preference for char* instead of the wchar_t*/LPWSTR type provided by "CommandLineToArgvW()"
+void CommandLineToArgvA(char* cmdLine_cp, char** args_cpa);						// Get arguments from command line.. just a personal preference for char* instead of the wchar_t*/LPWSTR type provided by "CommandLineToArgvW()"
 void WriteToConsoleA(char* cpMsg);												// "Write to Console A" function to save >20KB compared to printf and <stdio.h>
 
 // --------------------------- Functions Prototype ---------------------------- //
 int access(const char* path, int mode);											// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/access-waccess?view=msvc-160
-// void* __stdcall GetStdHandle(int32_t nStdHandle);							// https://docs.microsoft.com/en-us/windows/console/getstdhandle
+// void* __stdcall GetStdHandle(int nStdHandle);							// https://docs.microsoft.com/en-us/windows/console/getstdhandle
 // void* GetCommandLineA();														// https://docs.microsoft.com/en-us/windows/win32/api/processenv/nf-processenv-getcommandlinea
 // unsigned long strlen(const char *str);										// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/strlen-wcslen-mbslen-mbslen-l-mbstrlen-mbstrlen-l?view=msvc-160
-// int __stdcall WriteConsoleA(void* hConsoleOutput, const char* lpBuffer,int32_t nNumberOfCharsToWrite, unsigned long* lpNumberOfCharsWritten,void* lpReserved);  // https://docs.microsoft.com/en-us/windows/console/writeconsole
+// int __stdcall WriteConsoleA(void* hConsoleOutput, const char* lpBuffer,int nNumberOfCharsToWrite, unsigned long* lpNumberOfCharsWritten,void* lpReserved);  // https://docs.microsoft.com/en-us/windows/console/writeconsole
 // int CopyFileA(const char* lpExistingFileName, const char* lpNewFileName, int bFailIfExists);  // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-copyfilea
 // void* malloc(size_t size);													// https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/malloc?view=msvc-160
 // void* CreateFileA(const char* lpFileName, unsigned long dwDesiredAccess, unsigned long dwShareMode, void* lpSecurityAttributes, unsigned long dwCreationDisposition, unsigned long dwFlagsAndAttributes, void* hTemplateFile);  // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-createfilea
@@ -38,7 +38,7 @@ int access(const char* path, int mode);											// https://docs.microsoft.com/
 // unsigned long SetFilePointer(void* hFile, long lDistanceToMove, long* lpDistanceToMoveHigh, unsigned long dwMoveMethod);  // https://docs.microsoft.com/en-us/windows/win32/api/fileapi/nf-fileapi-setfilepointer
 // int CloseHandle(void* hObject);												// https://docs.microsoft.com/en-us/windows/win32/api/handleapi/nf-handleapi-closehandle
 // void* BeginUpdateResourceA(const char* pFileName, int bDeleteExistingResources);  // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-beginupdateresourcea
-// int UpdateResourceA(void* hUpdate, const char* lpType, const char* lpName,int16_t wLanguage, void* lpData, int32_t cb);  // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea
+// int UpdateResourceA(void* hUpdate, const char* lpType, const char* lpName,short wLanguage, void* lpData, int cb);  // https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-updateresourcea
 // int EndUpdateResourceA(void* hUpdate, int fDiscard);							// https://docs.microsoft.com/en-us/windows/win32/api/winbase/nf-winbase-endupdateresourcea
 // void ExitProcess(unsigned int uExitCode);									// https://docs.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-exitprocess
 
@@ -47,68 +47,71 @@ int access(const char* path, int mode);											// https://docs.microsoft.com/
 // #define MAKELANGID(p,s) ((((unsigned long)(s)) << 10) | (unsigned long)(p))	// https://docs.microsoft.com/en-us/windows/win32/api/winnt/nf-winnt-makelangid
 
 // ----------------------------- Global Variables ----------------------------- //
-void* __stdcall vp_ConsOut;
+void* __stdcall consOut_vp;
 
 // --------------------------- entry point function --------------------------- //
 void cei() {
-	vp_ConsOut = GetStdHandle(-11);
+	consOut_vp = GetStdHandle(-11);
 // Get arguments from command line
-	const int iNbArgs = 3;														// number of expected arguments
-	char*	cpaArgs[iNbArgs+1];													// 1st "argument" isnt really one: it's this program path
-	char*	cpCmdLine = GetCommandLineA();
-	CommandLineToArgvA(cpCmdLine, cpaArgs);										// Get arguments from command line
+	const int nbArgs_i = 3;														// number of expected arguments
+	char*	args_cpa[nbArgs_i+1];												// +1: 1st "argument" is this program path
+	char*	cmdLine_cp = GetCommandLineA();
+	CommandLineToArgvA(cmdLine_cp, args_cpa);									// Get arguments from command line
 // Check that enough arguments were passed
-	if(!cpaArgs[2]) {
+	if(!args_cpa[2]) {
 		WriteToConsoleA("\nERROR_BAD_ARGUMENTS: Arguments missing\n");
-		WriteToConsoleA("\nUsage: > cei PATH\\TO\\ICO PATH\\TO\\EXE [PATH\\TO\\NEWEXEWITHICO]\n");
-		ExitProcess(0xA0); }													// 0xA0 = ERROR_BAD_ARGUMENTS	
+		WriteToConsoleA("\nUsage: > cei Path\\to\\ICO Path\\to\\EXE [Path\\to\\newEXEwithICO]\n");
+		ExitProcess(0xA0); }													// 0xA0: ERROR_BAD_ARGUMENTS	
 // Check if 1st and 2nd arguments are a path to a file that exists
 	for (int ct=1; ct<=2; ct++) {
-		if(access(cpaArgs[ct], 0) < 0 ) {
-			WriteToConsoleA("\nERROR_FILE_NOT_FOUND: \""); WriteToConsoleA(cpaArgs[ct]); WriteToConsoleA("\"\n");
-		ExitProcess(0x2); } }													// 0x2 = ERROR_FILE_NOT_FOUND
+		if(access(args_cpa[ct], 0) < 0 ) {
+			WriteToConsoleA("\nERROR_FILE_NOT_FOUND: \""); WriteToConsoleA(args_cpa[ct]); WriteToConsoleA("\"\n");
+		ExitProcess(0x2); } }													// 0x2: ERROR_FILE_NOT_FOUND
 // Check if a 3rd argument has been passed to backup the original exe
-	if(cpaArgs[3]) {
-		CopyFileA(cpaArgs[2], cpaArgs[3], 0);
-		cpaArgs[2] = cpaArgs[3]; }
+	if(args_cpa[3]) {
+		CopyFileA(args_cpa[2], args_cpa[3], 0);
+		args_cpa[2] = args_cpa[3]; }
 // read 1st 22 bytes from ico file: https://en.wikipedia.org/wiki/ICO_(file_format)
-	void*	vpIcoFile	= CreateFileA(cpaArgs[1], 0x80000000, 0, NULL, 3, 0, NULL);
-	void*	vpIcoInfo	= malloc(22);
-	int64_t vpmIcoInfo	= (int64_t)vpIcoInfo;
-	unsigned long* ulpBytRead = 0;
-	ReadFile(vpIcoFile, vpIcoInfo, 22, ulpBytRead, NULL);
+	void* icoFile_vp = CreateFileA(args_cpa[1], 0x80000000, 0, NULL, 3, 0, NULL);
+	void* icoInfo_vp = malloc(22);
+	long long icoInfoAdr_ll = (long long)icoInfo_vp;
+	unsigned long* procByte_ulp = 0;
+	ReadFile(icoFile_vp, icoInfo_vp, 22, procByte_ulp, NULL);
 // printf("\n");
-// printf("i16Reserved:  %x\n",	*(int16_t*)(vpmIcoInfo));
-// printf("i16Type:      %x\n",	*(int16_t*)(vpmIcoInfo + 2));
-// printf("i16NbImg:     %x\n",	*(int16_t*)(vpmIcoInfo + 4));
-// printf("i8Width:      %x\n",	* (int8_t*)(vpmIcoInfo + 6));
-// printf("i8Height:     %x\n",	* (int8_t*)(vpmIcoInfo + 7));
-// printf("i8NbCol:      %x\n",	* (int8_t*)(vpmIcoInfo + 8));
-// printf("i8Reserved:   %x\n",	* (int8_t*)(vpmIcoInfo + 9));
-// printf("i16ColPlanes: %x\n",	*(int16_t*)(vpmIcoInfo + 10));
-// printf("i16BitPerPx:  %x\n",	*(int16_t*)(vpmIcoInfo + 12));
-// printf("i32ImgBytSiz: %x\n",	*(int32_t*)(vpmIcoInfo + 14));
-// printf("i32ImgOffset: %x\n",	*(int32_t*)(vpmIcoInfo + 18));
+// printf("reserved_s:	%x\n",	*(short*)(icoInfoAdr_ll));
+// printf("type_s:      %x\n",	*(short*)(icoInfoAdr_ll + 2));
+// printf("nbImg_s:     %x\n",	*(short*)(icoInfoAdr_ll + 4));
+// printf("width_c:		%x\n",	* (char*)(icoInfoAdr_ll + 6));
+// printf("height_c:	%x\n",	* (char*)(icoInfoAdr_ll + 7));
+// printf("nbCol_c:		%x\n",	* (char*)(icoInfoAdr_ll + 8));
+// printf("reserved_c:	%x\n",	* (char*)(icoInfoAdr_ll + 9));
+// printf("colPlanes_s:	%x\n",	*(short*)(icoInfoAdr_ll + 10));
+// printf("bitPerPx_s:	%x\n",	*(short*)(icoInfoAdr_ll + 12));
+// printf("imgSize_i:	%x\n",	*(int*)(icoInfoAdr_ll + 14));
+// printf("imgOffset_i:	%x\n",	*(int*)(icoInfoAdr_ll + 18));
 
 // Check if 1st 2 WORDs of .ico file are valid
-	if (*(int16_t*)vpmIcoInfo != 0 || *(int16_t*)(vpmIcoInfo + 2) != 1 ){		// ICONDIR->Reserved = 0 && ICONDIR->Type = 1
-		WriteToConsoleA("\nERROR_BAD_ARGUMENTS: \""); WriteToConsoleA(cpaArgs[1]); WriteToConsoleA("\" is not a valid .ico file\n");
-		CloseHandle(vpIcoFile);
-		ExitProcess(0xA0); }													// 0xA0 = ERROR_BAD_ARGUMENTS	
+	if (*(short*)icoInfoAdr_ll != 0 || *(short*)(icoInfoAdr_ll + 2) != 1 ){		// ICONDIR->Reserved = 0 && ICONDIR->Type = 1
+		WriteToConsoleA("\nERROR_BAD_ARGUMENTS: \""); WriteToConsoleA(args_cpa[1]); WriteToConsoleA("\" is not a valid .ico file\n");
+		CloseHandle(icoFile_vp);
+		ExitProcess(0xA0); }													// 0xA0: ERROR_BAD_ARGUMENTS	
 // Get .ico 1st image + info
-	int32_t	i32ImgOffset = *(int32_t*)(vpmIcoInfo + 18);						// Get 1st image offset: ICONDIRENTRY[1]->i32ImgOffset
-	SetFilePointer(vpIcoFile, i32ImgOffset, NULL, 0);
-	int32_t	i32ImgBytSiz = *(int32_t*)(vpmIcoInfo + 14);						// Get 1st image size in byte: ICONDIRENTRY[1]->i32ImgBytSiz
-	void*	vpRes = malloc(i32ImgBytSiz);
-	ReadFile(vpIcoFile, vpRes, i32ImgBytSiz, ulpBytRead, NULL);
-	CloseHandle(vpIcoFile);
-	*(int16_t*)(vpmIcoInfo + 4) = 1;											// Set ICONDIR->NbImg = 1: only 1st image is used
-	*(int16_t*)(vpmIcoInfo + 18) = 1;											// Replace ICONDIRENTRY[1]->i32ImgOffset with GRPICONDIRENTRY[1]->OrdinalName = 1
+	int	imgOffset_i = *(int*)(icoInfoAdr_ll +18);								// +18: ICONDIRENTRY[1]->imgOffset_i (1st image offset)
+	int	imgSize_i = *(int*)(icoInfoAdr_ll +14);									// +14: ICONDIRENTRY[1]->imgSize_i (1st image size in byte)
+	void* icoReadBuf_vp = malloc(imgSize_i);
+	SetFilePointer(icoFile_vp, imgOffset_i, NULL, 0);
+	ReadFile(icoFile_vp, icoReadBuf_vp, imgSize_i, procByte_ulp, NULL);
+	CloseHandle(icoFile_vp);
+	*(short*)(icoInfoAdr_ll +4) = 1;											// Set ICONDIR->NbImg = 1: only 1st image is used
+	*(short*)(icoInfoAdr_ll +18) = 1;											// Replace ICONDIRENTRY[1]->imgOffset_i with GRPICONDIRENTRY[1]->OrdinalName = 1
 // Update .exe ressource
-	void*	vpUpdRes = BeginUpdateResourceA(cpaArgs[2], 0);
-	UpdateResourceA(vpUpdRes, (char*)3, (char*)1, 0, vpRes, i32ImgBytSiz);		// (char*)3  = MAKEINTRESOURCE(3)  = RT_ICON, 0 = MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL)
-	UpdateResourceA(vpUpdRes, (char*)14, (char*)1, 0, vpIcoInfo, 20);			// (char*)14 = MAKEINTRESOURCE(14) = RT_GROUP_ICON
-	EndUpdateResourceA(vpUpdRes, 0);
+	void* updateRes_vp = BeginUpdateResourceA(args_cpa[2], 0);
+	UpdateResourceA(updateRes_vp, (char*)3, (char*)1, 0, icoReadBuf_vp, imgSize_i);	// (char*)3: MAKEINTRESOURCE(3)  = RT_ICON; 0: MAKELANGID(LANG_NEUTRAL, SUBLANG_NEUTRAL)
+	UpdateResourceA(updateRes_vp, (char*)14, (char*)1, 0, icoInfo_vp, 20);		// (char*)14: MAKEINTRESOURCE(14) = RT_GROUP_ICON
+	EndUpdateResourceA(updateRes_vp, 0);
+// Clean Up
+	free(icoInfo_vp);
+	free(icoReadBuf_vp);
 // Done
 	ExitProcess(0);
 }
@@ -116,21 +119,31 @@ void cei() {
 // -------------------- Get arguments from command line A --------------------- //
 // Notes:
 //	- Personal preference for char* instead of the wchar_t* provided by "CommandLineToArgvW()"
-//	- Works with double quoted arguments containing escaped quotes: "Such as this \"Double Quoted\" Argument with \"Escaped Quotes\""
-void CommandLineToArgvA(char* cpCmdLine, char** cpaArgs) {
-	char	cEnd;
-	while (*cpCmdLine) {
-		while (*cpCmdLine && *cpCmdLine == ' ') cpCmdLine++;					// Trim white-spaces before the argument
-		cEnd = ' ';																// end of argument is defined as white-space..
-		if (*cpCmdLine == '\"') { cEnd = '\"'; cpCmdLine++; }					// ..or as a double quote if argument is between double quotes
-		*cpaArgs = cpCmdLine;													// Save argument pointer
-		while (*cpCmdLine && (*cpCmdLine != cEnd || (cEnd == '\"' && *(cpCmdLine-1) == '\\'))) cpCmdLine++;  // Find end of argument ' ' or '\"', while skipping '\\\"' if cEnd = '\"'
-		*cpCmdLine = 0;	cpCmdLine++;
-		cpaArgs++; }
+//	- Probably works with double quoted arguments containing escaped quotes.. in most cases:
+//		- "Such as this \"Double Quoted\" Argument with \"Escaped Quotes\" and \\\"Escaped BackSlash\"\\"
+void CommandLineToArgvA(char* cmdLine_cp, char** args_cpa) {
+	char endChar_c;
+	while (*cmdLine_cp) {
+		while (*cmdLine_cp && *cmdLine_cp == ' ') cmdLine_cp++;					// Trim white-spaces before the argument
+		endChar_c = ' ';														// end of argument is defined as white-space..
+		if (*cmdLine_cp == '\"') { endChar_c = '\"'; cmdLine_cp++; }			// ..or as a double quote if argument is between double quotes
+		*args_cpa = cmdLine_cp;													// Save argument pointer
+// Find end of argument ' ' or '\"', while skipping '\\\"' if endChar_c = '\"'
+		int prevBackSlash_b = 0;
+		while (*cmdLine_cp && (*cmdLine_cp != endChar_c || (endChar_c == '\"' && prevBackSlash_b))) {
+			prevBackSlash_b = 0;
+			int checkBackSlash_i = 0;
+			while(*(cmdLine_cp-checkBackSlash_i) == '\\') {
+				checkBackSlash_i++;
+				prevBackSlash_b = !prevBackSlash_b; }
+			cmdLine_cp++; }
+		if(*cmdLine_cp) {
+			*cmdLine_cp = 0; cmdLine_cp++; }
+		args_cpa++; }
 }
 
 // --------------------------- "Write to Console A" --------------------------- //
 // Note: Saves >20KB compared to printf and <stdio.h>
 void WriteToConsoleA(char* cpMsg) {
-	WriteConsoleA(vp_ConsOut, cpMsg, strlen(cpMsg), NULL, NULL);
+	WriteConsoleA(consOut_vp, cpMsg, strlen(cpMsg), NULL, NULL);
 }
